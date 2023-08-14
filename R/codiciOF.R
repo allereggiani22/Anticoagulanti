@@ -51,8 +51,9 @@ fasta_lines <- readLines(fasta_file1)
 headers <- fasta_lines[grepl("^>", fasta_lines)]
 
 # Print the extracted headers
-cat("Extracted headers:\n")
-cat(headers, sep = "\n") %>% as.character() %>% writeLines(here("headers.txt"))
+#cat("Extracted headers:\n")
+#cat(headers, sep = "\n") 
+headers %>% writeLines(here("headers.txt"))
 
 
 # extracting sequences from fasta -----------------------------------------
@@ -62,19 +63,163 @@ cat(headers, sep = "\n") %>% as.character() %>% writeLines(here("headers.txt"))
 fasta_file2 <- here("dati", "ALLINEAMENTO RATTI PROGETTO EX2.fas")
 fasta_file3 <- here("dati", "ALLINEAMENTO RATTI PROGETTO EX3.fas")
 # Read lines from the FASTA file
-sequences1 <- readLines(fasta_file1)
-sequences2 <- readLines(fasta_file2)
-sequences3 <- readLines(fasta_file3)
+fasta_lines_1 <- readLines(fasta_file1)
+fasta_lines_2 <- readLines(fasta_file2)
+fasta_lines_3 <- readLines(fasta_file3)
 
-# Initialize a variable to store the concatenated sequence
-sequence <- ""
+
+# Initialize a list to store concatenated sequences
+list1 <- list()
+list2 <- list()
+list3 <- list()
+
+
+
+#EXON 1
+# Initialize variables to keep track of the current sequence and header
+current_sequence1 <- ""
+current_header1 <- ""
 
 # Iterate over the lines of the FASTA file
-for (line in fasta_lines) {
-  if (!startsWith(line, ">")) {
-    sequence <- paste0(sequence, line, "\n")
+for (line in fasta_lines_1) {
+  if (startsWith(line, ">")) {
+    if (current_header1 != "") {
+      # Store the previous sequence
+      list1 <- c(list1, current_sequence1)
+    }
+    current_header1 <- line
+    current_sequence1 <- ""
+  } else {
+    current_sequence1 <- paste0(current_sequence1, line)
   }
 }
+
+# Store the last sequence
+list1 <- c(list1, current_sequence1)
+
+
+# EXON2
+# Initialize variables to keep track of the current sequence and header
+current_sequence2 <- ""
+current_header2 <- ""
+
+for (line in fasta_lines_2) {
+  if (startsWith(line, ">")) {
+    if (current_header2 != "") {
+      # Store the previous sequence
+      list2 <- c(list2, current_sequence2)
+    }
+    current_header2 <- line
+    current_sequence2 <- ""
+  } else {
+    current_sequence2 <- paste0(current_sequence2, line)
+  }
+}
+
+# Store the last sequence
+list2 <- c(list2, current_sequence2)
+
+# EXON3
+# Initialize variables to keep track of the current sequence and header
+current_sequence3 <- ""
+current_header3 <- ""
+
+for (line in fasta_lines_3) {
+  if (startsWith(line, ">")) {
+    if (current_header3 != "") {
+      # Store the previous sequence
+      list3 <- c(list3, current_sequence3)
+    }
+    current_header3 <- line
+    current_sequence3 <- ""
+  } else {
+    current_sequence3 <- paste0(current_sequence3, line)
+  }
+}
+
+# Store the last sequence
+list3 <- c(list3, current_sequence3)
+
+
+
+#combining the 3 exon sequences
+
+# Initialize a list to store concatenated sequences
+concatenated_sequences <- list()
+
+# Combine sequences line by line
+for (i in 1:length(list1)) {
+  concatenated_seq <- paste(list1[i], list2[i], list3[i], sep = "")
+  concatenated_sequences <- c(concatenated_sequences, concatenated_seq)
+}
+
+#adding headers
+VKorc_sequences <- list()
+for (i in 1:length(headers)) {
+  VKorc_seq <- paste(headers[i], concatenated_sequences[i], sep = "\n")
+  VKorc_sequences <- c(VKorc_sequences, VKorc_seq)
+}
+
+#exporting complete sequences
+VKorc_sequences %>% paste(collapse = "\n") %>% writeLines("Complete sequences.fas")
+
+#così funziona, rimane il problema del raddoppio del codone di giunzione
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Initialize a variable to store the concatenated sequence
+sequence1 <- ""
+sequence2 <- ""
+sequence3 <- ""
+
+# Iterate over the lines of the FASTA file
+for (line in fasta_lines_1) {
+  if (!startsWith(line, ">")) {
+    sequence1 <- paste0(sequence1, line, "\n")
+  }
+}
+
+for (line in fasta_lines_2) {
+  if (!startsWith(line, ">")) {
+    sequence2 <- paste0(sequence2, line, "\n")
+  }
+}
+
+for (line in fasta_lines_3) {
+  if (!startsWith(line, ">")) {
+    sequence3 <- paste0(sequence3, line, "\n")
+  }
+}
+
+#now I have to split the txt sequences into vectors
+
+list1 <- sequence1 %>% strsplit("\n")
+list2 <- sequence2 %>% strsplit("\n")
+list3 <- sequence3 %>% strsplit("\n")
 
 #Initialize a list to store concatenated sequences
 concatenated_sequences <- list()
@@ -82,11 +227,11 @@ concatenated_sequences <- list()
 # Initialize variables to keep track of the current sequence
 current_sequence <- ""
 
-for (i in 1:length(sequences_1)) {
-  if (!startsWith(sequences_1[i], ">")) {
-    current_sequence <- paste0(current_sequence, sequences_1[i])
-    current_sequence <- paste0(current_sequence, sequences_2[i])
-    current_sequence <- paste0(current_sequence, sequences_3[i])
+for (i in 1:length(sequences1)) {
+  if (!startsWith(sequences1[i], ">")) {
+    current_sequence <- paste0(current_sequence, sequences1[i],"\n")
+    current_sequence <- paste0(current_sequence, sequences2[i])
+    current_sequence <- paste0(current_sequence, sequences3[i])
     
     concatenated_sequences <- c(concatenated_sequences, current_sequence)
     
