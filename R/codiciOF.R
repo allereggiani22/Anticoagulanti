@@ -1,5 +1,8 @@
 source(here('R', 'librerie.R'))
 
+# Joining exons -----------------------------------------------------------
+
+
 #Voglio unire le sequenze di 3 diverse sequenze di 3 esoni per ricostruire la CDS del gene VKORC1
 
 
@@ -163,7 +166,54 @@ for (i in 1:length(headers)) {
 #exporting complete sequences
 VKorc_sequences %>% paste(collapse = "\n") %>% writeLines("Complete sequences.fas")
 
-#così funziona, rimane il problema del raddoppio del codone di giunzione
+
+# Mapping -----------------------------------------------------------------
+
+library(tmap)    # for static and interactive maps
+
+
+ER <- st_read("dati/limits_R_8_municipalities.geojson")
+#comuni <- st_read("dati/limits_IT_municipalities.geojson")
+ER2 <- ER %>% 
+  mutate(catture = if_else(name %in% c("Modena", "Gatteo", "Cesena", "Piacenza", 
+                                       "Carpaneto Piacentino", "Bomporto","Crevalcore", "Bagnara di Romagna", "Cervia", 
+                                       "Castel San Pietro Terme", "Granarolo dell'Emilia", "Ozzano dell'Emilia", "Russi" ), "si", "no"))
+
+
+#prov <- st_read("dati/limits_IT_provinces.geojson")
+
+#er  <- prov[prov$reg_name =="Emilia-Romagna",]
+
+#RER <- st_union(er)
+
+# world_asia = world[world$continent == "Asia", ]
+# asia = st_union(world_asia)
+
+map1 <- tm_shape(ER) +
+  tm_polygons("prov_name", fill.scale = tm_scale_continuous(values= "greys", midpoint = 28000))
+
+map2 <- tm_shape(ER2) +
+  tm_polygons("catture", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1,0.7)))
+
+
+# Add fill layer to nz shape
+tm_shape(ER2) +
+  tm_fill("prov_name")+
+  tm_borders()
+
+tm_shape(ER2) +
+  tm_polygons("prov_name", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1,0.7)))
+  
+  
+
+
+tm_shape(ER) +
+  # tm_polygons(fill = "prov_name", fill.scale = tm_scale_categorical(values = "greys", values.range = c(0.25,0.65)),
+  #             fill.legend = tm_legend(title = "Province"),
+  #             col = "catture")
+  
+  tm_fill("prov_name", tm_scale_categorical(values = "greys", values.range = c(0.25,0.75)))+
+  tm_borders()
 
 
 
@@ -171,23 +221,7 @@ VKorc_sequences %>% paste(collapse = "\n") %>% writeLines("Complete sequences.fa
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Prove varie -------------------------------------------------------------
 
 
 
