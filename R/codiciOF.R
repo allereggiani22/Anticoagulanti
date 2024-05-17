@@ -197,23 +197,23 @@ map2 <- tm_shape(ER2) +
 
 
 # Add fill layer to nz shape
-tm_shape(ER2) +
-  tm_fill("prov_name")+
-  tm_borders()
-
-tm_shape(ER2) +
-  tm_polygons("prov_name", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1,0.7)))
+# tm_shape(ER2) +
+#   tm_fill("prov_name")+
+#   tm_borders()
+# 
+# tm_shape(ER2) +
+#   tm_polygons("prov_name", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1,0.7)))
   
   
 
 
-tm_shape(ER) +
-  # tm_polygons(fill = "prov_name", fill.scale = tm_scale_categorical(values = "greys", values.range = c(0.25,0.65)),
-  #             fill.legend = tm_legend(title = "Province"),
-  #             col = "catture")
-  
-  tm_fill("prov_name", tm_scale_categorical(values = "greys", values.range = c(0.25,0.75)))+
-  tm_borders()
+# tm_shape(ER) +
+#   # tm_polygons(fill = "prov_name", fill.scale = tm_scale_categorical(values = "greys", values.range = c(0.25,0.65)),
+#   #             fill.legend = tm_legend(title = "Province"),
+#   #             col = "catture")
+#   
+#   tm_fill("prov_name", tm_scale_categorical(values = "greys", values.range = c(0.25,0.75)))+
+#   tm_borders()
 
 
 
