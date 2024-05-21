@@ -178,7 +178,8 @@ ER2 <- ER %>%
   mutate(catture = if_else(name %in% c("Modena", "Gatteo", "Cesena", "Piacenza", 
                                        "Carpaneto Piacentino", "Bomporto","Crevalcore", "Bagnara di Romagna", "Cervia", 
                                        "Castel San Pietro Terme", "Granarolo dell'Emilia", "Ozzano dell'Emilia", "Russi" ), "si", "no"))
-
+ER3 <- ER %>% 
+  mutate(catture = if_else(name == "Cesena", 16, if_else(name == "Modena", 9, if_else(name %in% c("Bomporto", "Gatteo", "Crevalcore"), 3, if_else(name %in% c("Piacenza", "Carpaneto Piacentino", "Bagnara di Romagna", "Cervia", "Castel San Pietro Terme", "Forlì", "Granarolo dell'Emilia", "Lugo", "Ozzano dell'Emilia", "Russi"), 1,0))))) #%>% view()
 
 #prov <- st_read("dati/limits_IT_provinces.geojson")
 
@@ -194,6 +195,65 @@ map1 <- tm_shape(ER) +
 
 map2 <- tm_shape(ER2) +
   tm_polygons("catture", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1,0.7)))
+
+#prova 3
+
+province_colors <- scale_fill_manual(values = grey.colors(n = length(unique(ER$prov_name))))
+
+map3 <- tm_shape(ER)+
+  tm_polygons("prov_name", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1,0.75)), fill.legend = tm_legend(title = "Provinces")) +
+  tm_borders() +
+  tm_shape(ER %>% filter(name %in% c("Modena", "Gatteo", "Cesena", "Piacenza", 
+                                     "Carpaneto Piacentino", "Bomporto","Crevalcore", "Bagnara di Romagna", "Cervia", 
+                                     "Castel San Pietro Terme", "Granarolo dell'Emilia", "Ozzano dell'Emilia", "Russi" ))) +
+  tm_polygons(fill = "red", fill.legend = tm_legend(title = "Comuni catture", show = T, position = "bottom")) +
+  tm_title_out("Sampling Map", position = tm_pos_out("center", "top"))
+
+
+tm_shape(ER3)+
+  tm_polygons("prov_name", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1,0.75)), fill.legend = tm_legend(title = "Provinces")) +
+  tm_borders() +
+  tm_shape(ER3 %>% filter(name %in% c("Modena", "Gatteo", "Cesena", "Piacenza", 
+                                     "Carpaneto Piacentino", "Bomporto","Crevalcore", "Bagnara di Romagna", "Cervia", 
+                                     "Castel San Pietro Terme", "Granarolo dell'Emilia", "Ozzano dell'Emilia", "Russi" ))) +
+  tm_polygons("catture", fill.scale = tm_scale_continuous(values = "reds", values.range = c(0.2,1)), fill.legend = tm_legend(title = "Samples", format = list(1,3,9,13))) +
+  tm_title_out("Sampling Map", position = tm_pos_out("center", "top"))
+
+
+
+
+
+
+#mappa con legenda modificata
+
+# Calcola il punto medio di ciascuna provincia
+
+# Converti il dataframe in un oggetto sf
+ER3_sf <- st_as_sf(ER3)
+
+# Raggruppa per provincia e unisci le geometrie dei comuni all'interno di ciascuna provincia
+province_geom <- ER3_sf %>%
+  group_by(prov_acr) %>%
+  summarize(geometry = st_union(geometry))
+
+# Calcola i centroidi delle province
+province_centroids <- province_geom %>%
+  st_centroid()
+
+map4 <- tm_shape(ER3) +
+  tm_polygons("prov_name", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1, 0.75)), fill.legend = tm_legend_hide()) +
+  tm_borders() +
+  tm_shape(ER3 %>% filter(name %in% c("Modena", "Gatteo", "Cesena", "Piacenza", 
+                                      "Carpaneto Piacentino", "Bomporto", "Crevalcore", "Bagnara di Romagna", "Cervia", 
+                                      "Castel San Pietro Terme", "Granarolo dell'Emilia", "Forlì", "Lugo", "Ozzano dell'Emilia", "Russi" ))) +
+  tm_polygons("catture", fill.scale = tm_scale_categorical(values = "reds", values.range = c(0.2,1)), 
+              fill.legend = tm_legend(title = "N° of samples")) +
+  tm_shape(province_centroids) + # Aggiungi le etichette per le province
+  tm_text("prov_acr", size = 1, col = "black", fontface = "bold") +
+  tm_title_out("Sampling Map", position = tm_pos_out("center", "top"))
+
+tmap_save(map4, "Mappa_catture.png")
+
 
 
 # Add fill layer to nz shape
