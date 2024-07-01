@@ -1,48 +1,10 @@
 source(here('R', 'librerie.R'))
 
-# Joining exons -----------------------------------------------------------
+
+# Joining Exons -----------------------------------------------------------
 
 
-#Voglio unire le sequenze di 3 diverse sequenze di 3 esoni per ricostruire la CDS del gene VKORC1
-
-
-# # File paths
-# file_path_1 <- here("dati","Ex1.txt")
-# file_path_2 <- here("dati","Ex2.txt")
-# file_path_3 <- here("dati","Ex3.txt")
-# 
-# 
-# # Read sequences from the FASTA files
-# sequences_1 <- readLines(file_path_1)
-# sequences_2 <- readLines(file_path_2)
-# sequences_3 <- readLines(file_path_3)
-# 
-# # Initialize a list to store concatenated sequences
-# concatenated_sequences <- list()
-# 
-# # Initialize variables to keep track of the current sequence
-# current_sequence <- ""
-# 
-# for (i in 1:length(sequences_1)) {
-#   if (!startsWith(sequences_1[i], ">")) {
-#     current_sequence <- paste0(current_sequence, sequences_1[i])
-#     current_sequence <- paste0(current_sequence, sequences_2[i])
-#     current_sequence <- paste0(current_sequence, sequences_3[i])
-#     
-#     concatenated_sequences <- c(concatenated_sequences, current_sequence)
-#     
-#     current_sequence <- ""  # Reset for the next sequence
-#   }
-# }
-# 
-# # Save the concatenated sequences to a new FASTA file
-# seqs <- as.character(concatenated_sequences)
-# writeLines(seqs, "concatenated_sequences.fasta")
-
-
-
-# Extracting headers from fasta -------------------------------------------
-
+#Extracting headers from fasta
 
 # File path
 fasta_file1 <- here("dati", "EX1.fas")
@@ -54,15 +16,13 @@ fasta_lines <- readLines(fasta_file1)
 headers <- fasta_lines[grepl("^>", fasta_lines)]
 
 # Print the extracted headers
-#cat("Extracted headers:\n")
-#cat(headers, sep = "\n") 
 headers %>% writeLines(here("headers.txt"))
 
 
-# extracting sequences from fasta -----------------------------------------
+# extracting sequences from fasta 
 
 # File path
-#fasta_file <- "path_to_fasta_file.fasta"
+
 fasta_file2 <- here("dati", "EX2.fas")
 fasta_file3 <- here("dati", "EX3.fas")
 # Read lines from the FASTA file
@@ -166,6 +126,34 @@ for (i in 1:length(headers)) {
 #exporting complete sequences
 VKorc_sequences %>% paste(collapse = "\n") %>% writeLines("Complete sequences.fas")
 
+#Changing headers name
+
+fasta_file4 <- "./Complete sequences.fas"
+
+fasta_seqs <- readDNAStringSet(fasta_file4)
+
+#function to convert in tibble
+
+fasta_df <-  tibble(
+  name = names(fasta_seqs),
+  sequence = as.character(fasta_seqs)
+)
+
+#modify header names
+
+fasta_df <- fasta_df %>% 
+  mutate(name = str_replace(name, "EX1.*", "RECONSTRUCTED SEQUENCE"))
+
+#Convert back to DNAStringSet
+
+renamed_seqs <- DNAStringSet(fasta_df$sequence)
+names(renamed_seqs) <- fasta_df$name
+
+renamed_file <- "Complete sequences renamed.fas"
+writeXStringSet(renamed_seqs, renamed_file)
+
+
+
 
 # Mapping -----------------------------------------------------------------
 
@@ -173,7 +161,7 @@ library(tmap)    # for static and interactive maps
 
 
 ER <- st_read("dati/limits_R_8_municipalities.geojson")
-#comuni <- st_read("dati/limits_IT_municipalities.geojson")
+
 ER2 <- ER %>% 
   mutate(catture = if_else(name %in% c("Modena", "Gatteo", "Cesena", "Piacenza", 
                                        "Carpaneto Piacentino", "Bomporto","Crevalcore", "Bagnara di Romagna", "Cervia", 
@@ -181,14 +169,6 @@ ER2 <- ER %>%
 ER3 <- ER %>% 
   mutate(catture = if_else(name == "Cesena", 16, if_else(name == "Modena", 9, if_else(name %in% c("Bomporto", "Gatteo", "Crevalcore"), 3, if_else(name %in% c("Piacenza", "Carpaneto Piacentino", "Bagnara di Romagna", "Cervia", "Castel San Pietro Terme", "Forlì", "Granarolo dell'Emilia", "Lugo", "Ozzano dell'Emilia", "Russi"), 1,0))))) #%>% view()
 
-#prov <- st_read("dati/limits_IT_provinces.geojson")
-
-#er  <- prov[prov$reg_name =="Emilia-Romagna",]
-
-#RER <- st_union(er)
-
-# world_asia = world[world$continent == "Asia", ]
-# asia = st_union(world_asia)
 
 map1 <- tm_shape(ER) +
   tm_polygons("prov_name", fill.scale = tm_scale_continuous(values= "greys", midpoint = 28000))
@@ -228,15 +208,15 @@ tm_shape(ER3)+
 
 # Calcola il punto medio di ciascuna provincia
 
-# Converti il dataframe in un oggetto sf
+# Convert dataframe in sf object
 ER3_sf <- st_as_sf(ER3)
 
-# Raggruppa per provincia e unisci le geometrie dei comuni all'interno di ciascuna provincia
+# Group by province and summarize municipalities' geometry by province
 province_geom <- ER3_sf %>%
   group_by(prov_acr) %>%
   summarize(geometry = st_union(geometry))
 
-# Calcola i centroidi delle province
+# Calculate province centroids
 province_centroids <- province_geom %>%
   st_centroid()
 
@@ -256,85 +236,6 @@ tmap_save(map4, "Mappa_catture.png")
 
 
 
-# Add fill layer to nz shape
-# tm_shape(ER2) +
-#   tm_fill("prov_name")+
-#   tm_borders()
-# 
-# tm_shape(ER2) +
-#   tm_polygons("prov_name", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1,0.7)))
-  
-  
 
-
-# tm_shape(ER) +
-#   # tm_polygons(fill = "prov_name", fill.scale = tm_scale_categorical(values = "greys", values.range = c(0.25,0.65)),
-#   #             fill.legend = tm_legend(title = "Province"),
-#   #             col = "catture")
-#   
-#   tm_fill("prov_name", tm_scale_categorical(values = "greys", values.range = c(0.25,0.75)))+
-#   tm_borders()
-
-
-
-
-
-
-
-# Prove varie -------------------------------------------------------------
-
-
-
-# Initialize a variable to store the concatenated sequence
-sequence1 <- ""
-sequence2 <- ""
-sequence3 <- ""
-
-# Iterate over the lines of the FASTA file
-for (line in fasta_lines_1) {
-  if (!startsWith(line, ">")) {
-    sequence1 <- paste0(sequence1, line, "\n")
-  }
-}
-
-for (line in fasta_lines_2) {
-  if (!startsWith(line, ">")) {
-    sequence2 <- paste0(sequence2, line, "\n")
-  }
-}
-
-for (line in fasta_lines_3) {
-  if (!startsWith(line, ">")) {
-    sequence3 <- paste0(sequence3, line, "\n")
-  }
-}
-
-#now I have to split the txt sequences into vectors
-
-list1 <- sequence1 %>% strsplit("\n")
-list2 <- sequence2 %>% strsplit("\n")
-list3 <- sequence3 %>% strsplit("\n")
-
-#Initialize a list to store concatenated sequences
-concatenated_sequences <- list()
-
-# Initialize variables to keep track of the current sequence
-current_sequence <- ""
-
-for (i in 1:length(sequences1)) {
-  if (!startsWith(sequences1[i], ">")) {
-    current_sequence <- paste0(current_sequence, sequences1[i],"\n")
-    current_sequence <- paste0(current_sequence, sequences2[i])
-    current_sequence <- paste0(current_sequence, sequences3[i])
-    
-    concatenated_sequences <- c(concatenated_sequences, current_sequence)
-    
-    current_sequence <- ""  # Reset for the next sequence
-  }
-}
-
-# Save the concatenated sequences to a new FASTA file
-seqs <- as.character(concatenated_sequences)
-writeLines(seqs, "concatenated_sequences.fasta")
 
 
