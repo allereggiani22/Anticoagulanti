@@ -1,285 +1,157 @@
 source(here('R', 'librerie.R'))
 
-
-# Joining Exons -----------------------------------------------------------
-
-
-#Extracting headers from fasta
-
-# File path
-fasta_file1 <- here("dati", "EX1.fas")
-
-# Read lines from the FASTA file
-fasta_lines <- readLines(fasta_file1)
-
-# Extract headers
-headers <- fasta_lines[grepl("^>", fasta_lines)]
-
-# Print the extracted headers
-headers %>% writeLines(here("headers.txt"))
+library(Biostrings)
 
 
-# extracting sequences from fasta 
+#COI sequences
 
-# File path
-
-fasta_file2 <- here("dati", "EX2.fas")
-fasta_file3 <- here("dati", "EX3.fas")
-# Read lines from the FASTA file
-fasta_lines_1 <- readLines(fasta_file1)
-fasta_lines_2 <- readLines(fasta_file2)
-fasta_lines_3 <- readLines(fasta_file3)
+# COI sequences -----------------------------------------------------------
 
 
-# Initialize a list to store concatenated sequences
-list1 <- list()
-list2 <- list()
-list3 <- list()
+fasta_file <- readDNAStringSet("dati/COI riunite 35Rr24Rn8Mm.fas")
+
+# Rimuovere " FR" da tutti gli header
+#new_headers <- gsub(" FR", "", names(fasta_file))
+
+new_headers <- paste0("Seq", seq_along(names(fasta_file)), "_", names(fasta_file), "/2023")
+short_headers <- paste0("Seq", seq_along(names(fasta_file)))
+# Assegnare i nuovi header al DNAStringSet
+names(fasta_file) <- new_headers
+
+# Salvare il file FASTA modificato
+writeXStringSet(fasta_file, "dati/COI ordinate nomi completi.fas")
+
+#nomi con solo progressivi
+names(fasta_file) <- short_headers
+writeXStringSet(fasta_file, "dati/COI ordinate nomi corti.fas")
+
+write(names(fasta_file), "COI headers.txt")
 
 
 
-#EXON 1
-# Initialize variables to keep track of the current sequence and header
-current_sequence1 <- ""
-current_header1 <- ""
+# VKORC1 sequences --------------------------------------------------------
 
-# Iterate over the lines of the FASTA file
-for (line in fasta_lines_1) {
-  if (startsWith(line, ">")) {
-    if (current_header1 != "") {
-      # Store the previous sequence
-      list1 <- c(list1, current_sequence1)
-    }
-    current_header1 <- line
-    current_sequence1 <- ""
-  } else {
-    current_sequence1 <- paste0(current_sequence1, line)
-  }
+
+fasta_file <- readDNAStringSet("dati/VKORC1 riunite 35Rr24Rn8Mm.fas")
+
+# Rimuovere " RECONSTRUCTED SEQUENCE" da tutti gli header
+#new_headers <- gsub(" RECONSTRUCTED SEQUENCE", "", names(fasta_file))
+new_headers <- paste0("Seq", seq_along(names(fasta_file)), "_", names(fasta_file), "/2023")
+short_headers <- paste0("Seq", seq_along(names(fasta_file)))
+#new_headers <- paste0("Seq", seq_along(new_headers), "_", new_headers, "/2023")
+
+# Assegnare i nuovi header al DNAStringSet
+names(fasta_file) <- new_headers
+
+# Salvare il file FASTA modificato
+writeXStringSet(fasta_file, "dati/VKORC1 ordinate nomi completi.fas")
+
+#nomi con solo progressivi
+names(fasta_file) <- short_headers
+writeXStringSet(fasta_file, "dati/VKORC1 ordinate nomi corti.fas")
+
+write(names(fasta_file), "VKORC1 headers.txt")
+
+
+# Rimuovere nomi e tenere solo sequenziali --------------------------------
+
+fasta_file <- readDNAStringSet("dati/VKORC1 sequences nomi corretti.fas")
+fasta_file2 <- readDNAStringSet("dati/COI sequences nomi corretti 2.fas")
+
+short_headers <- paste0("Seq", seq_along(names(fasta_file)))
+short_headers2 <- paste0("Seq", seq_along(names(fasta_file2)))
+short_headers2
+
+
+
+# Identificare mancante ---------------------------------------------------
+
+VKORC_file <- readDNAStringSet("dati/VKORC1 sequences.fas")
+
+new_headers_vkorc <- gsub(" RECONSTRUCTED SEQUENCE", "", names(VKORC_file))
+names(VKORC_file) <- new_headers_vkorc
+
+COI_file <- readDNAStringSet("dati/COI sequences.fas")
+
+new_headers_COI <- gsub(" FR", "", names(COI_file))
+names(COI_file) <- new_headers_COI
+
+COI_headers <- names(COI_file)
+VKORC_headers <- names(VKORC_file)
+
+# Identificare la sequenza mancante in COI_file
+missing_in_COI <- setdiff(VKORC_headers, COI_headers)
+
+# Visualizzare la sequenza mancante
+if(length(missing_in_COI) > 0) {
+  cat("La sequenza mancante in COI_file ha l'header:", missing_in_COI, "\n")
+} else {
+  cat("Nessuna sequenza mancante in COI_file.\n")
 }
 
-# Store the last sequence
-list1 <- c(list1, current_sequence1)
+# Se desideri allineare le sequenze che coincidono
+common_headers <- intersect(COI_headers, VKORC_headers)
+
+# Creare una nuova lista di sequenze allineate
+aligned_COI <- COI_file[common_headers]
+aligned_VKORC <- VKORC_file[common_headers]
+
+# Salvare le sequenze allineate (opzionale)
+writeXStringSet(aligned_COI, "dati/COI_sequences_ordinate.fasta")
+writeXStringSet(aligned_VKORC, "dati/VKORC1_sequences_ordinate.fasta")
 
 
-# EXON2
-# Initialize variables to keep track of the current sequence and header
-current_sequence2 <- ""
-current_header2 <- ""
 
-for (line in fasta_lines_2) {
-  if (startsWith(line, ">")) {
-    if (current_header2 != "") {
-      # Store the previous sequence
-      list2 <- c(list2, current_sequence2)
-    }
-    current_header2 <- line
-    current_sequence2 <- ""
-  } else {
-    current_sequence2 <- paste0(current_sequence2, line)
-  }
+# Verifica ordine headers -------------------------------------------------
+
+# Leggere i file FASTA
+COI_sequences <- readDNAStringSet("dati/COI ordinate nomi completi.fas")
+VKORC_sequences <- readDNAStringSet("dati/VKORC1 ordinate nomi completi.fas")
+
+# Estrarre gli header (nomi) delle sequenze
+COI_headers <- names(COI_sequences)
+VKORC_headers <- names(VKORC_sequences)
+
+# Confrontare l'ordine degli header
+if (identical(COI_headers, VKORC_headers)) {
+  cat("Gli header sono nello stesso ordine in entrambi i file.\n")
+} else {
+  cat("Gli header NON sono nello stesso ordine nei due file.\n")
+  
+  # Opzionale: mostrare quali header sono diversi
+  different_indices <- which(COI_headers != VKORC_headers)
+  cat("Differenze trovate agli indici:\n", different_indices, "\n")
+  cat("COI_file headers:", COI_headers[different_indices], "\n")
+  cat("VKORC_file headers:", VKORC_headers[different_indices], "\n")
 }
 
-# Store the last sequence
-list2 <- c(list2, current_sequence2)
 
-# EXON3
-# Initialize variables to keep track of the current sequence and header
-current_sequence3 <- ""
-current_header3 <- ""
 
-for (line in fasta_lines_3) {
-  if (startsWith(line, ">")) {
-    if (current_header3 != "") {
-      # Store the previous sequence
-      list3 <- c(list3, current_sequence3)
-    }
-    current_header3 <- line
-    current_sequence3 <- ""
-  } else {
-    current_sequence3 <- paste0(current_sequence3, line)
-  }
+# Prova joining esoni con Biostrings --------------------------------------
+
+# Carica il pacchetto necessario
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("Biostrings")
+
+library(Biostrings)
+
+# Leggi i file FASTA
+exon1 <- readDNAStringSet(here("dati", "EX1.fas"))
+exon2 <- readDNAStringSet(here("dati", "EX2.fas"))
+exon3 <- readDNAStringSet(here("dati", "EX3.fas"))
+
+# Assicurati che gli header siano nello stesso ordine
+if (!identical(names(exon1), names(exon2)) || !identical(names(exon2), names(exon3))) {
+  stop("Gli header dei file FASTA non corrispondono o non sono nello stesso ordine.")
 }
 
-# Store the last sequence
-list3 <- c(list3, current_sequence3)
+# Unisci le sequenze corrispondenti riga per riga
+combined_sequences <- DNAStringSet(paste0(as.character(exon1), as.character(exon2), as.character(exon3)))
 
+# Mantieni gli header originali
+names(combined_sequences) <- names(exon1)
 
+# Salva il file FASTA combinato
+writeXStringSet(combined_sequences, filepath = here("complete sequences2.fas"))
 
-#combining the 3 exon sequences
-
-# Initialize a list to store concatenated sequences
-concatenated_sequences <- list()
-
-# Combine sequences line by line
-for (i in 1:length(list1)) {
-  concatenated_seq <- paste(list1[i], list2[i], list3[i], sep = "")
-  concatenated_sequences <- c(concatenated_sequences, concatenated_seq)
-}
-
-#adding headers
-VKorc_sequences <- list()
-for (i in 1:length(headers)) {
-  VKorc_seq <- paste(headers[i], concatenated_sequences[i], sep = "\n")
-  VKorc_sequences <- c(VKorc_sequences, VKorc_seq)
-}
-
-#exporting complete sequences
-VKorc_sequences %>% paste(collapse = "\n") %>% writeLines("Complete sequences.fas")
-
-#Changing headers name
-
-fasta_file4 <- "./Complete sequences.fas"
-
-fasta_seqs <- readDNAStringSet(fasta_file4)
-
-#function to convert in tibble
-
-fasta_df <-  tibble(
-  name = names(fasta_seqs),
-  sequence = as.character(fasta_seqs)
-)
-
-#modify header names
-
-fasta_df <- fasta_df %>% 
-  mutate(name = str_replace(name, "EX1.*", "RECONSTRUCTED SEQUENCE"))
-
-#Convert back to DNAStringSet
-
-renamed_seqs <- DNAStringSet(fasta_df$sequence)
-names(renamed_seqs) <- fasta_df$name
-
-renamed_file <- "Complete sequences renamed.fas"
-writeXStringSet(renamed_seqs, renamed_file)
-
-
-
-
-# Mapping -----------------------------------------------------------------
-
-library(tmap)    # for static and interactive maps
-
-
-ER <- st_read("dati/limits_R_8_municipalities.geojson")
-
-ER2 <- ER %>% 
-  mutate(catture = if_else(name %in% c("Modena", "Gatteo", "Cesena", "Piacenza", 
-                                       "Carpaneto Piacentino", "Bomporto","Crevalcore", "Bagnara di Romagna", "Cervia", 
-                                       "Castel San Pietro Terme", "Granarolo dell'Emilia", "Ozzano dell'Emilia", "Russi" ), "si", "no"))
-ER3 <- ER %>% 
-  mutate(catture = if_else(name == "Cesena", 16, if_else(name == "Modena", 9, if_else(name %in% c("Bomporto", "Gatteo", "Crevalcore"), 3, if_else(name %in% c("Piacenza", "Carpaneto Piacentino", "Bagnara di Romagna", "Cervia", "Castel San Pietro Terme", "Forlì", "Granarolo dell'Emilia", "Lugo", "Ozzano dell'Emilia", "Russi"), 1,0))))) #%>% view()
-
-
-map1 <- tm_shape(ER) +
-  tm_polygons("prov_name", fill.scale = tm_scale_continuous(values= "greys", midpoint = 28000))
-
-map2 <- tm_shape(ER2) +
-  tm_polygons("catture", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1,0.7)))
-
-#prova 3
-
-province_colors <- scale_fill_manual(values = grey.colors(n = length(unique(ER$prov_name))))
-
-map3 <- tm_shape(ER)+
-  tm_polygons("prov_name", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1,0.75)), fill.legend = tm_legend(title = "Provinces")) +
-  tm_borders() +
-  tm_shape(ER %>% filter(name %in% c("Modena", "Gatteo", "Cesena", "Piacenza", 
-                                     "Carpaneto Piacentino", "Bomporto","Crevalcore", "Bagnara di Romagna", "Cervia", 
-                                     "Castel San Pietro Terme", "Granarolo dell'Emilia", "Ozzano dell'Emilia", "Russi" ))) +
-  tm_polygons(fill = "red", fill.legend = tm_legend(title = "Comuni catture", show = T, position = "bottom")) +
-  tm_title_out("Sampling Map", position = tm_pos_out("center", "top"))
-
-
-tm_shape(ER3)+
-  tm_polygons("prov_name", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1,0.75)), fill.legend = tm_legend(title = "Provinces")) +
-  tm_borders() +
-  tm_shape(ER3 %>% filter(name %in% c("Modena", "Gatteo", "Cesena", "Piacenza", 
-                                     "Carpaneto Piacentino", "Bomporto","Crevalcore", "Bagnara di Romagna", "Cervia", 
-                                     "Castel San Pietro Terme", "Granarolo dell'Emilia", "Ozzano dell'Emilia", "Russi" ))) +
-  tm_polygons("catture", fill.scale = tm_scale_continuous(values = "reds", values.range = c(0.2,1)), fill.legend = tm_legend(title = "Samples", format = list(1,3,9,13))) +
-  tm_title_out("Sampling Map", position = tm_pos_out("center", "top"))
-
-
-
-
-
-
-#mappa con legenda modificata
-
-# Calcola il punto medio di ciascuna provincia
-
-# Convert dataframe in sf object
-ER3_sf <- st_as_sf(ER3)
-
-# Group by province and summarize municipalities' geometry by province
-province_geom <- ER3_sf %>%
-  group_by(prov_acr) %>%
-  summarize(geometry = st_union(geometry))
-
-# Calculate province centroids
-province_centroids <- province_geom %>%
-  st_centroid()
-
-map4 <- tm_shape(ER3) +
-  tm_polygons("prov_name", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1, 0.75)), fill.legend = tm_legend_hide()) +
-  tm_borders() +
-  tm_shape(ER3 %>% filter(name %in% c("Modena", "Gatteo", "Cesena", "Piacenza", 
-                                      "Carpaneto Piacentino", "Bomporto", "Crevalcore", "Bagnara di Romagna", "Cervia", 
-                                      "Castel San Pietro Terme", "Granarolo dell'Emilia", "Forlì", "Lugo", "Ozzano dell'Emilia", "Russi" ))) +
-  tm_polygons("catture", fill.scale = tm_scale_categorical(values = "reds", values.range = c(0.2,1)), 
-              fill.legend = tm_legend(title = "N° of samples")) +
-  tm_shape(province_centroids) + # Aggiungi le etichette per le province
-  tm_text("prov_acr", size = 1, col = "black", fontface = "bold") +
-  tm_title_out("Sampling Map", position = tm_pos_out("center", "top"))
-
-tmap_save(map4, "Mappa_catture.png")
-
-
-
-
-#prova modifica per avere numero municipalità
-
-# Calcolare la frequenza dei valori di "catture"
-
-ER3_filtered <-as.data.frame(ER3) %>% 
-  filter(name %in% c("Modena", "Gatteo", "Cesena", "Piacenza", 
-                     "Carpaneto Piacentino", "Bomporto", "Crevalcore", "Bagnara di Romagna", "Cervia", 
-                     "Castel San Pietro Terme", "Granarolo dell'Emilia", "Forlì", "Lugo", "Ozzano dell'Emilia", "Russi"))
-
-# Calcolare le frequenze
-freq_table <- ER3_filtered %>%
-  count(catture) %>%
-  dplyr::rename(frequency = n)
-
-# Unire le frequenze con il dataframe originale
-ER3_filtered <- ER3_filtered %>%
-  left_join(freq_table, by = "catture")
-
-# Creare una nuova colonna combinata per la legenda
-ER3_filtered <- ER3_filtered %>%
-  mutate(catture_with_freq = paste(catture, " (n=", frequency, ")", sep = ""))
-
-# Ordinare i livelli per catture e rimuovere duplicati
-unique_levels <- ER3_filtered %>%
-  distinct(catture, .keep_all = TRUE) %>%
-  arrange(catture) %>%
-  pull(catture_with_freq)
-
-# Convertire catture_with_freq in un fattore con livelli ordinati
-ER3_filtered$catture_with_freq <- factor(ER3_filtered$catture_with_freq, 
-                                         levels = unique_levels)
-
-
-# Modificare il codice tmap per usare la nuova colonna nella legenda
-map5 <- tm_shape(ER3) +
-  tm_polygons("prov_name", fill.scale = tm_scale_categorical(values = "grays", values.range = c(0.1, 0.75)), fill.legend = tm_legend_hide()) +
-  tm_borders() +
-  tm_shape(st_as_sf(ER3_filtered)) +
-  tm_polygons("catture_with_freq", fill.scale = tm_scale_categorical(values = "reds", values.range = c(0.2, 1)), 
-              fill.legend = tm_legend(title = "N° of samples (municipalities)")) +
-  tm_shape(province_centroids) + # Aggiungi le etichette per le province
-  tm_text("prov_acr", size = 1, col = "black", fontface = "bold") +
-  tm_title_out("Sampling Map", position = tm_pos_out("center", "top")) +
-  tm_layout(legend.position = c("right", "top"))
-
-tmap_save(map5, "Mappa_catture_rev-1.png")
