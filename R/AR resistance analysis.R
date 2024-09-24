@@ -124,7 +124,21 @@ map <- tm_shape(ER3) +
               fill.legend = tm_legend(title = "N° of samples (municipalities)")) +
   tm_shape(province_centroids) + # Aggiungi le etichette per le province
   tm_text("prov_acr", size = 1, col = "black", fontface = "bold") +
-  tm_title_out("Sampling Map", position = tm_pos_out("center", "top")) +
-  tm_layout(legend.position = c("right", "top"))
+  #tm_title_out("Sampling Map", position = tm_pos_out("center", "top")) +
+  tm_layout(legend.position = c("left", "bottom"), legend.title.size = 1, legend.text.size = 1)
 
-tmap_save(map, "Mappa_catture_rev-1.png")
+tmap_save(map, filename = "Mappa_catture_rev-1.tiff", dpi = 600)
+
+#Creating Italy map
+
+regions <- st_read("dati/limits_IT_regions.geojson")
+
+emiliaromagna <- regions %>% filter(reg_name == "Emilia-Romagna")
+
+Italy_ER <- tm_shape(regions)+
+  tm_borders()+
+  tm_shape(emiliaromagna)+
+  tm_polygons(fill= "red")+
+  tm_layout(frame = F)
+
+tmap_save(Italy_ER, filename = "ER_in_Italy.tiff", dpi=600)  
